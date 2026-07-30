@@ -1,0 +1,148 @@
+//==============================================================
+// Sequence Detector (1011) - Mealy FSM
+//==============================================================
+
+module sequence_detector (
+    input clk,
+    input rst,
+    input din,
+    output reg detected
+);
+
+    // State Encoding
+    parameter S0 = 2'b00,
+              S1 = 2'b01,
+              S2 = 2'b10,
+              S3 = 2'b11;
+
+    reg [1:0] state, next_state;
+
+    // State Register
+    always @(posedge clk or posedge rst) begin
+        if (rst)
+            state <= S0;
+        else
+            state <= next_state;
+    end
+
+    // Next State Logic & Output Logic
+    always @(*) begin
+        next_state = state;
+        detected = 1'b0;
+
+        case(state)
+
+            // No match
+            S0: begin
+                if(din)
+                    next_state = S1;
+                else
+                    next_state = S0;
+            end
+
+            // Detected: 1
+            S1: begin
+                if(din)
+                    next_state = S1;
+                else
+                    next_state = S2;
+            end
+
+            // Detected: 10
+            S2: begin
+                if(din)
+                    next_state = S3;
+                else
+                    next_state = S0;
+            end
+
+            // Detected: 101
+            S3: begin
+                if(din) begin
+                    detected = 1'b1;   // Sequence 1011 detected
+                    next_state = S1;   // Overlapping detection
+                end
+                else
+                    next_state = S2;
+            end
+
+            default: begin
+                next_state = S0;
+                detected = 1'b0;
+            end
+
+        endcase
+    end
+
+endmodule
+
+//==============================================================
+// Testbench for Sequence Detector (1011)
+//==============================================================
+
+`timescale 1ns/1ps
+
+module sequence_detector_tb;
+
+    reg clk;
+    reg rst;
+    reg din;
+    wire detected;
+
+    sequence_detector uut (
+        .clk(clk),
+        .rst(rst),
+        .din(din),
+        .detected(detected)
+    );
+
+    // Clock Generation (10 ns period)
+    always #5 clk = ~clk;
+
+    // Task to send one bit
+    task send_bit;
+        input bit_in;
+        begin
+            din = bit_in;
+            #10;
+        end
+    endtask
+
+    initial begin
+
+        clk = 0;
+        rst = 1;
+        din = 0;
+
+        #15;
+        rst = 0;
+
+        // Input Stream:
+        // 1 0 1 1 0 1 1
+        // Sequence 1011 occurs twice (overlapping)
+
+        send_bit(1);
+        send_bit(0);
+        send_bit(1);
+        send_bit(1);   // Detect
+
+        send_bit(0);
+        send_bit(1);
+        send_bit(1);   // Detect again
+
+        #20;
+        $finish;
+
+    end
+  
+initial begin
+    $dumpfile("sequence_detector.vcd");
+    $dumpvars(0, sequence_detector_tb);
+end
+  
+    initial begin
+        $monitor("Time=%0t | din=%b | detected=%b",
+                  $time, din, detected);
+    end
+
+endmodule
