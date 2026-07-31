@@ -1,0 +1,173 @@
+//==============================================================
+// Traffic Light Controller using FSM
+//==============================================================
+
+module traffic_light_controller (
+    input  wire clk,
+    input  wire reset,
+
+    output reg highway_red,
+    output reg highway_yellow,
+    output reg highway_green,
+
+    output reg side_red,
+    output reg side_yellow,
+    output reg side_green
+);
+
+    // State Declaration
+
+    parameter STATE0 = 2'b00;  // Highway Green, Side Road Red
+    parameter STATE1 = 2'b01;  // Highway Yellow, Side Road Red
+    parameter STATE2 = 2'b10;  // Highway Red, Side Road Green
+    parameter STATE3 = 2'b11;  // Highway Red, Side Road Yellow
+
+    reg [1:0] state, next_state;
+
+    // State Register
+
+    always @(posedge clk or posedge reset) begin
+        if (reset)
+            state <= STATE0;
+        else
+            state <= next_state;
+    end
+
+    // Next State Logic
+
+    always @(*) begin
+        case (state)
+
+            STATE0: next_state = STATE1;
+            STATE1: next_state = STATE2;
+            STATE2: next_state = STATE3;
+            STATE3: next_state = STATE0;
+
+            default: next_state = STATE0;
+
+        endcase
+    end
+
+    // Output Logic
+  
+    always @(*) begin
+
+        // Default: All lights OFF
+        highway_red    = 1'b0;
+        highway_yellow = 1'b0;
+        highway_green  = 1'b0;
+
+        side_red       = 1'b0;
+        side_yellow    = 1'b0;
+        side_green     = 1'b0;
+
+        case (state)
+
+            // State 0: Highway Green, Side Road Red
+            STATE0: begin
+                highway_green = 1'b1;
+                side_red      = 1'b1;
+            end
+
+            // State 1: Highway Yellow, Side Road Red
+            STATE1: begin
+                highway_yellow = 1'b1;
+                side_red       = 1'b1;
+            end
+
+            // State 2: Highway Red, Side Road Green
+            STATE2: begin
+                highway_red   = 1'b1;
+                side_green    = 1'b1;
+            end
+
+            // State 3: Highway Red, Side Road Yellow
+            STATE3: begin
+                highway_red    = 1'b1;
+                side_yellow    = 1'b1;
+            end
+
+            default: begin
+                highway_green = 1'b1;
+                side_red      = 1'b1;
+            end
+
+        endcase
+    end
+
+endmodule
+
+//==============================================================
+// Testbench for Traffic Light Controller
+//==============================================================
+
+`timescale 1ns/1ps
+
+module traffic_light_controller_tb;
+
+    reg clk;
+    reg reset;
+
+    wire highway_red;
+    wire highway_yellow;
+    wire highway_green;
+
+    wire side_red;
+    wire side_yellow;
+    wire side_green;
+
+    // DUT
+ 
+    traffic_light_controller DUT (
+        .clk(clk),
+        .reset(reset),
+        .highway_red(highway_red),
+        .highway_yellow(highway_yellow),
+        .highway_green(highway_green),
+        .side_red(side_red),
+        .side_yellow(side_yellow),
+        .side_green(side_green)
+    );
+
+    // Clock
+    always #5 clk = ~clk;
+
+    // Test
+    initial begin
+
+        clk = 0;
+        reset = 1;
+
+        #10 reset = 0;
+
+        #100 $finish;
+
+    end
+
+    // Display 
+
+    always @(posedge clk) begin
+
+        case (DUT.state)
+
+            2'b00:
+                $display("Time=%0t | State 0 | Highway: GREEN  | Side Road: RED",
+                         $time);
+
+            2'b01:
+                $display("Time=%0t | State 1 | Highway: YELLOW | Side Road: RED",
+                         $time);
+
+            2'b10:
+                $display("Time=%0t | State 2 | Highway: RED    | Side Road: GREEN",
+                         $time);
+
+            2'b11:
+                $display("Time=%0t | State 3 | Highway: RED    | Side Road: YELLOW",
+                         $time);
+
+        endcase
+
+    end
+
+endmodule
