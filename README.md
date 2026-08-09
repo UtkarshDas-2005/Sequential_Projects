@@ -1,8 +1,6 @@
 # Verilog_Sequential_Projects
 ---
 
-## 📖 Overview
-
 **Sequential_Projects** is a collection of fundamental **sequential digital circuits** implemented using **Verilog HDL**. This repository demonstrates the design and implementation of commonly used digital systems based on **Finite State Machines (FSMs)**, counters, and sequential logic.
 
 The repository includes **Digital Clock, Elevator Controller, Pulse Generator, Sequence Detector, Stop Watch, and Traffic Light Controller**. Each module is written using synthesizable Verilog HDL, accompanied by a dedicated testbench, and can be simulated to verify its functionality using waveform analysis.
